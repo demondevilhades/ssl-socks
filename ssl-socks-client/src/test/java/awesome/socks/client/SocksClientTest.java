@@ -3,6 +3,7 @@ package awesome.socks.client;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
+import awesome.socks.common.util.Config;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -23,22 +24,22 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.socksx.v5.Socks5ClientEncoder;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 
- * @author awesome
- */
 @Slf4j
-public class HttpClientTest {
-    
+public class SocksClientTest {
+
+    private String host = Config.get("sss.host");
+    private int serverPort = Config.getInt("sss.port");
+
     public void run() {
         NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         try {
             bootstrap.group(eventLoopGroup)
-                    .remoteAddress(new InetSocketAddress("www.baidu.com", 80))
+                    .remoteAddress(new InetSocketAddress(host, serverPort))
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<SocketChannel>() {
@@ -46,6 +47,7 @@ public class HttpClientTest {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
+                                    .addLast(Socks5ClientEncoder.DEFAULT)
                                     .addLast("HttpClientCodec", new HttpClientCodec())
                                     .addLast("HttpObjectAggregator", new HttpObjectAggregator(1024 * 10 * 1024))
                                     .addLast("HttpContentCompressor", new HttpContentDecompressor())
@@ -53,7 +55,7 @@ public class HttpClientTest {
 
                                         @Override
                                         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                                            URI uri = new URI("/");
+                                            URI uri = new URI("http://www.google.com");
 
                                             FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,
                                                     HttpMethod.GET, uri.toASCIIString(),
@@ -88,10 +90,10 @@ public class HttpClientTest {
             log.error("", e);
         } finally {
             eventLoopGroup.shutdownGracefully();
-        }
+        }        
     }
     
     public static void main(String[] args) {
-        new HttpClientTest().run();
+        new SocksClientTest().run();
     }
 }
