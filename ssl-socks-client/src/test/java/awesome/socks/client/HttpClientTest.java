@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -52,22 +53,6 @@ public class HttpClientTest {
                                     .addLast("test", new SimpleChannelInboundHandler<FullHttpResponse>() {
 
                                         @Override
-                                        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                                            URI uri = new URI("/");
-
-                                            FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,
-                                                    HttpMethod.GET, uri.toASCIIString(),
-                                                    Unpooled.wrappedBuffer("".getBytes()));
-                                            
-                                            request.headers()
-                                                    .add(HttpHeaderNames.CONTENT_TYPE, "text/html;charset=utf-8")
-                                                    .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
-                                                    .add(HttpHeaderNames.CONTENT_LENGTH, request.content().readableBytes());
-                                            
-                                            ctx.writeAndFlush(request);
-                                        }
-
-                                        @Override
                                         protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse response)
                                                 throws Exception {
                                             log.info("headers = {}", response.headers());
@@ -82,7 +67,34 @@ public class HttpClientTest {
                                     });
                         }
                     });
-            ChannelFuture cf = bootstrap.connect().sync();
+            ChannelFuture cf = bootstrap.connect().addListener(new GenericFutureListener<ChannelFuture>() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if(future.isSuccess()) {
+                        log.info("future is success");
+                    } else {
+                        log.info("future is not success");
+                    }
+                }
+            }).sync();
+            
+            try {
+                URI uri = new URI("/");
+
+                FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,
+                        HttpMethod.GET, uri.toASCIIString(),
+                        Unpooled.wrappedBuffer("".getBytes()));
+                
+                request.headers()
+                        .add(HttpHeaderNames.CONTENT_TYPE, "text/html;charset=utf-8")
+                        .add(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+                        .add(HttpHeaderNames.CONTENT_LENGTH, request.content().readableBytes());
+                
+                cf.channel().writeAndFlush(request);
+            } catch (Exception e) {
+                log.error("", e);
+            }
+            
             cf.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             log.error("", e);
