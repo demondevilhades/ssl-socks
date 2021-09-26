@@ -14,7 +14,7 @@ public class NettyUtils {
     }
 
     public static void closeOnFlush(Channel ch) {
-        if (ch.isActive()) {
+        if (ch != null && ch.isActive()) {
             ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
         }
     }
