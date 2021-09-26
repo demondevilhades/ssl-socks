@@ -21,6 +21,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +48,7 @@ public class App {
             return;
         }
 
-        EventLoopGroup gtsGroup = new NioEventLoopGroup(1);
+        EventExecutorGroup gtsGroup = new DefaultEventExecutorGroup(1);
         GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(gtsGroup.next());
         @SuppressWarnings("unused")
         Monitor monitor = new Monitor(Unit.KB, globalTrafficShapingHandler.trafficCounter());

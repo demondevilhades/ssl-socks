@@ -24,6 +24,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,8 +51,9 @@ public class App {
             log.error("", e);
             return;
         }
-        
-        GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
+
+        EventExecutorGroup gctsGroup = new DefaultEventExecutorGroup(1);
+        GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = new GlobalChannelTrafficShapingHandler(gctsGroup);
         @SuppressWarnings("unused")
         Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
         
