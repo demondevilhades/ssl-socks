@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AllArgsConstructor
 @Slf4j
-public class SSSServerHandler extends ChannelInboundHandlerAdapter {
+public class SSSServerChannelHandler extends ChannelInboundHandlerAdapter {
 
     private final Channel clientChannel;
 

@@ -1,6 +1,9 @@
 package awesome.socks.server;
 
+import java.security.cert.CertificateException;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLException;
 
 import awesome.socks.common.handler.Monitor;
 import awesome.socks.common.handler.Monitor.Unit;
@@ -16,6 +19,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -33,10 +39,21 @@ public class App {
     public void run() {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+        @SuppressWarnings("unused")
+        SslContext sslContext;
+        try {
+            SelfSignedCertificate ssc = new SelfSignedCertificate();
+            sslContext = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
+        } catch (CertificateException | SSLException e) {
+            log.error("", e);
+            return;
+        }
         
         GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
         @SuppressWarnings("unused")
         Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
+        
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -51,6 +68,7 @@ public class App {
                                     .addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO))
                                     .addLast("GlobalChannelTrafficShapingHandler", globalChannelTrafficShapingHandler)
                                     .addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS))
+//                                    .addLast("SslHandler", sslContext.newHandler(ch.alloc()))
                                     .addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
                         }

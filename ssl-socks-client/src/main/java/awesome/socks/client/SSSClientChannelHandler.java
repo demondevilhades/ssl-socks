@@ -12,14 +12,14 @@ import io.netty.channel.ChannelOption;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SSSClientHandler extends ChannelInboundHandlerAdapter {
+public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     private static final String SERVER_HOST = Config.get("sss.server.host");
     private static final int SERVER_PORT = Config.getInt("sss.server.port");
 
     private Channel serverChannel;
 
-    public SSSClientHandler() {
+    public SSSClientChannelHandler() {
     }
 
     @Override
@@ -30,7 +30,15 @@ public class SSSClientHandler extends ChannelInboundHandlerAdapter {
                 .option(ChannelOption.AUTO_READ, false)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
                 .channel(ctx.channel().getClass())
-                .handler(new SSSServerHandler(clientChannel));
+                // TODO
+//                .handler(new ChannelInitializer<SocketChannel>() {
+//
+//                        @Override
+//                        public void initChannel(SocketChannel ch) throws Exception {
+//                            ch.pipeline();
+//                        }
+//                })
+                .handler(new SSSServerChannelHandler(clientChannel));
         ChannelFuture f = b.connect(SERVER_HOST, SERVER_PORT)
                 .addListener(new ChannelFutureListener() {
             @Override

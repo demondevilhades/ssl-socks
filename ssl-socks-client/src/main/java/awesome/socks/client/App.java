@@ -2,6 +2,8 @@ package awesome.socks.client;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLException;
+
 import awesome.socks.common.handler.Monitor;
 import awesome.socks.common.handler.Monitor.Unit;
 import awesome.socks.common.util.Config;
@@ -15,6 +17,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -32,6 +36,15 @@ public class App {
     public void run() {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+        @SuppressWarnings("unused")
+        SslContext sslContext;
+        try {
+            sslContext = SslContextBuilder.forClient().build();
+        } catch (SSLException e) {
+            log.error("", e);
+            return;
+        }
 
         EventLoopGroup gtsGroup = new NioEventLoopGroup(1);
         GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(gtsGroup.next());
@@ -53,7 +66,7 @@ public class App {
                                     .addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO))
                                     .addLast("GlobalTrafficShapingHandler", globalTrafficShapingHandler)
                                     .addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS))
-                                    .addLast("SSSClientHandler", new SSSClientHandler());
+                                    .addLast("SSSClientHandler", new SSSClientChannelHandler());
                         }
                     });
             ChannelFuture channelFuture = b.bind(localPort).addListener(new GenericFutureListener<ChannelFuture>() {
