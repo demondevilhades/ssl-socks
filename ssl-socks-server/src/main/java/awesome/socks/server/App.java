@@ -2,6 +2,8 @@ package awesome.socks.server;
 
 import java.util.concurrent.TimeUnit;
 
+import awesome.socks.common.handler.Monitor;
+import awesome.socks.common.handler.Monitor.Unit;
 import awesome.socks.common.util.Config;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -15,7 +17,7 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.handler.traffic.ChannelTrafficShapingHandler;
+import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,12 +28,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class App {
 
-    private int serverPort = Config.getInt("sss.port");
+    private int serverPort = Config.getInt("sss.server.port");
 
-    public void run() throws InterruptedException {
-
+    public void run() {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        
+        GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
+        @SuppressWarnings("unused")
+        Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -44,7 +49,7 @@ public class App {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
                                     .addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO))
-                                    .addLast("ChannelTrafficShapingHandler", new ChannelTrafficShapingHandler(5000)) //TODO
+                                    .addLast("GlobalChannelTrafficShapingHandler", globalChannelTrafficShapingHandler)
                                     .addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS))
                                     .addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
@@ -61,13 +66,15 @@ public class App {
                 }
             }).sync();
             channelFuture.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            log.error("", e);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         new App().run();
     }
 }

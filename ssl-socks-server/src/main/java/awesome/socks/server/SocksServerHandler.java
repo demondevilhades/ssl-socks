@@ -28,8 +28,8 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
 
     public static final SocksServerHandler INSTANCE = new SocksServerHandler();
     
-    private static final String USERNAME = Config.get("sss.username");
-    private static final String PASSWORD = Config.get("sss.password");
+    private static final String USERNAME = Config.get("sss.server.username");
+    private static final String PASSWORD = Config.get("sss.server.password");
     private static final boolean AUTH = !Strings.isNullOrEmpty(USERNAME);
 
     private SocksServerHandler() {
