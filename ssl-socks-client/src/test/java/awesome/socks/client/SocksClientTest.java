@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import awesome.socks.common.util.Config;
+import awesome.socks.client.bean.ClientOptions;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -46,8 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SocksClientTest {
 
-    private String host = Config.get("sss.host");
-    private int serverPort = Config.getInt("sss.port");
+    private String serverHost = ClientOptions.INSTANCE.serverHost();
+    private int serverPort = ClientOptions.INSTANCE.serverPort();
     
     private final AtomicInteger i = new AtomicInteger(0);
 
@@ -56,7 +56,7 @@ public class SocksClientTest {
         Bootstrap bootstrap = new Bootstrap();
         try {
             bootstrap.group(eventLoopGroup)
-                    .remoteAddress(new InetSocketAddress(host, serverPort))
+                    .remoteAddress(new InetSocketAddress(serverHost, serverPort))
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<SocketChannel>() {

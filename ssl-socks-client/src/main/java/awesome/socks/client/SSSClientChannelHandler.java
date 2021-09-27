@@ -1,6 +1,6 @@
 package awesome.socks.client;
 
-import awesome.socks.common.util.Config;
+import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.common.util.NettyUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -13,9 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
-
-    private static final String SERVER_HOST = Config.get("sss.server.host");
-    private static final int SERVER_PORT = Config.getInt("sss.server.port");
 
     private Channel serverChannel;
 
@@ -39,7 +36,7 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 //                        }
 //                })
                 .handler(new SSSServerChannelHandler(clientChannel));
-        ChannelFuture f = b.connect(SERVER_HOST, SERVER_PORT)
+        ChannelFuture f = b.connect(ClientOptions.INSTANCE.serverHost(), ClientOptions.INSTANCE.serverPort())
                 .addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) {

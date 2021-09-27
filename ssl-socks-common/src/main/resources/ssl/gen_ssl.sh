@@ -27,3 +27,14 @@ openssl x509 -req -days 3650 -in server.csr -signkey server.key -out server.crt
 
 openssl x509 -fingerprint -sha256 -in server.crt | head -n 1 | awk -F= '{print $2}' > fingerprint
 
+
+### server
+
+mkdir ../../../../../ssl-socks-server/src/main/resources/ssl
+cp server.crt server_pkcs8.key ../../../../../ssl-socks-server/src/main/resources/ssl/
+
+### client
+
+mkdir ../../../../../ssl-socks-client/src/main/resources/ssl
+cp fingerprint server_pkcs8.key ../../../../../ssl-socks-client/src/main/resources/ssl/
+

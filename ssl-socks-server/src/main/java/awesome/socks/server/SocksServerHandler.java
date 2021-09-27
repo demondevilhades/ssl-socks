@@ -2,8 +2,8 @@ package awesome.socks.server;
 
 import com.google.common.base.Strings;
 
-import awesome.socks.common.util.Config;
 import awesome.socks.common.util.NettyUtils;
+import awesome.socks.server.bean.ServerOptions;
 import awesome.socks.server.socksx.v5.Socks5AuthMethodExt;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,6 +13,7 @@ import io.netty.handler.codec.socksx.v4.Socks4CommandRequest;
 import io.netty.handler.codec.socksx.v4.Socks4CommandType;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5PasswordAuthResponse;
+import io.netty.handler.codec.socksx.v5.Socks5AuthMethod;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
@@ -28,8 +29,8 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
 
     public static final SocksServerHandler INSTANCE = new SocksServerHandler();
     
-    private static final String USERNAME = Config.get("sss.server.username");
-    private static final String PASSWORD = Config.get("sss.server.password");
+    private static final String USERNAME = ServerOptions.INSTANCE.serverUsername();
+    private static final String PASSWORD = ServerOptions.INSTANCE.serverPassword();
     private static final boolean AUTH = !Strings.isNullOrEmpty(USERNAME);
 
     private SocksServerHandler() {
@@ -52,21 +53,28 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
             case SOCKS5:
                 log.info("class = {}", socksRequest.getClass());
                 if (socksRequest instanceof Socks5InitialRequest) {
-                    if(AUTH) {// TODO
+                    if(ServerOptions.INSTANCE.useSsl()) {
+                     // TODO
+                    }
+                    if(AUTH) {
                         ctx.pipeline().addFirst(new Socks5PasswordAuthRequestDecoder());
 //                        ctx.write(new DefaultSocks5AuthMethodResponse(Socks5AuthMethod.PASSWORD));
-                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_PASSWORD));
+                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.PASSWORD));
+//                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_PASSWORD));
                     } else {
                         ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_NO_AUTH));
+                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
+//                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_NO_AUTH));
                     }
                 } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
                     Socks5PasswordAuthRequest authRequest = ((Socks5PasswordAuthRequest) socksRequest);
-                    if (USERNAME.equals(authRequest.username()) && PASSWORD.equals(authRequest.password())) {
-                        ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                        ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
-                    } else {
-                        ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE));
+                    if(AUTH) {
+                        if (USERNAME.equals(authRequest.username()) && PASSWORD.equals(authRequest.password())) {
+                            ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
+                            ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
+                        } else {
+                            ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE));
+                        }
                     }
                 } else if (socksRequest instanceof Socks5CommandRequest) {
                     Socks5CommandRequest socks5CmdRequest = (Socks5CommandRequest) socksRequest;
