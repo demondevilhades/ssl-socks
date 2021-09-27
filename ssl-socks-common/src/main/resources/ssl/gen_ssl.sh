@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eux
+
 ### 1. gen RSA key
 
 openssl genrsa -des3 -out server.key 2048
