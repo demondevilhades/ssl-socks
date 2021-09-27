@@ -8,35 +8,42 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.ssl.SslContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;
+    private final SslContext sslContext;
 
-    public SSSClientChannelHandler() {
+    public SSSClientChannelHandler(SslContext sslContext) {
+        this.sslContext = sslContext;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         final Channel clientChannel = ctx.channel();
-        Bootstrap b = new Bootstrap();
-        b.group(clientChannel.eventLoop())
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(clientChannel.eventLoop())
                 .option(ChannelOption.AUTO_READ, false)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
                 .channel(ctx.channel().getClass())
-                // TODO
-//                .handler(new ChannelInitializer<SocketChannel>() {
-//
-//                        @Override
-//                        public void initChannel(SocketChannel ch) throws Exception {
-//                            ch.pipeline();
-//                        }
-//                })
-                .handler(new SSSServerChannelHandler(clientChannel));
-        ChannelFuture f = b.connect(ClientOptions.INSTANCE.serverHost(), ClientOptions.INSTANCE.serverPort())
+                .handler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    public void initChannel(SocketChannel ch) throws Exception {
+                        if (sslContext != null) {
+                            ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
+                        }
+                        ch.pipeline().addLast("SSSServerChannelHandler", new SSSServerChannelHandler(clientChannel));
+                    }
+                });
+        // TODO bug to fix
+        ChannelFuture f = bootstrap.connect(ClientOptions.INSTANCE.serverHost(), ClientOptions.INSTANCE.serverPort())
                 .addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) {

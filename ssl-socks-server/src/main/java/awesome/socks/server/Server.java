@@ -58,8 +58,8 @@ public class Server {
             final SslContext sslContext = ServerOptions.INSTANCE.useSsl() ? getSslContext() : null;
             log.info("use ssl : {}", (sslContext != null));
             
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -78,7 +78,8 @@ public class Server {
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
                         }
                     });
-            ChannelFuture channelFuture = b.bind(ServerOptions.INSTANCE.serverPort()).addListener(new GenericFutureListener<ChannelFuture>() {
+            ChannelFuture channelFuture = bootstrap.bind(ServerOptions.INSTANCE.serverPort())
+                    .addListener(new GenericFutureListener<ChannelFuture>() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if(future.isSuccess()) {

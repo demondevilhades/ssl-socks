@@ -63,8 +63,8 @@ public class Client {
             final SslContext sslContext = ClientOptions.INSTANCE.useSsl() ? getSslContext() : null;
             log.info("use ssl : {}", (sslContext != null));
             
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childOption(ChannelOption.AUTO_READ, false)
@@ -75,15 +75,13 @@ public class Client {
                             if(globalTrafficShapingHandler != null) {
                                 ch.pipeline().addLast("GlobalTrafficShapingHandler", globalTrafficShapingHandler);
                             }
-                            if (sslContext != null) {
-                                ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
-                            }
                             ch.pipeline().addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO));
                             ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
-                            ch.pipeline().addLast("SSSClientHandler", new SSSClientChannelHandler());
+                            ch.pipeline().addLast("SSSClientHandler", new SSSClientChannelHandler(sslContext));
                         }
                     });
-            ChannelFuture channelFuture = b.bind(ClientOptions.INSTANCE.localPort()).addListener(new GenericFutureListener<ChannelFuture>() {
+            ChannelFuture channelFuture = bootstrap.bind(ClientOptions.INSTANCE.localPort())
+                    .addListener(new GenericFutureListener<ChannelFuture>() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if(future.isSuccess()) {
