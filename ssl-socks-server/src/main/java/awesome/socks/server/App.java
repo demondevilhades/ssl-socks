@@ -1,13 +1,16 @@
 package awesome.socks.server;
 
-import java.security.cert.CertificateException;
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
-import awesome.socks.common.handler.Monitor;
-import awesome.socks.common.handler.Monitor.Unit;
+import awesome.socks.common.bean.Options;
 import awesome.socks.common.util.Config;
+import awesome.socks.common.util.Monitor;
+import awesome.socks.common.util.ResourcesUtils;
+import awesome.socks.common.util.SslUtils;
+import awesome.socks.common.util.Monitor.Unit;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -20,8 +23,6 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
@@ -38,26 +39,26 @@ public class App {
 
     private int serverPort = Config.getInt("sss.server.port");
 
-    public void run() {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+    private final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+    private final EventLoopGroup workerGroup = new NioEventLoopGroup();
+    private final EventExecutorGroup gctsGroup = new DefaultEventExecutorGroup(1);
 
-        @SuppressWarnings("unused")
-        SslContext sslContext;
-        try {
-            SelfSignedCertificate ssc = new SelfSignedCertificate();
-            sslContext = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
-        } catch (CertificateException | SSLException e) {
-            log.error("", e);
-            return;
+    public void run(final Options options) {
+        final GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = options.isUseMonitor()
+                ? new GlobalChannelTrafficShapingHandler(gctsGroup)
+                : null;
+        if (globalChannelTrafficShapingHandler != null) {
+            @SuppressWarnings("unused")
+            Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
+            // TODO
         }
 
-        EventExecutorGroup gctsGroup = new DefaultEventExecutorGroup(1);
-        GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = new GlobalChannelTrafficShapingHandler(gctsGroup);
-        @SuppressWarnings("unused")
-        Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
-        
         try {
+            final SslContext sslContext = options.isUseSsl() ? getSslContext() : null;
+            if (sslContext != null) {
+                // TODO
+            }
+            
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
@@ -67,12 +68,15 @@ public class App {
 
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline()
-                                    .addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO))
-                                    .addLast("GlobalChannelTrafficShapingHandler", globalChannelTrafficShapingHandler)
-                                    .addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS))
-//                                    .addLast("SslHandler", sslContext.newHandler(ch.alloc()))
-                                    .addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
+                            ch.pipeline().addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO));
+                            if(globalChannelTrafficShapingHandler != null) {
+                                ch.pipeline().addLast("GlobalChannelTrafficShapingHandler", globalChannelTrafficShapingHandler);
+                            }
+                            ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
+                            if(sslContext != null) {
+                                ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
+                            }
+                            ch.pipeline().addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
                         }
                     });
@@ -87,15 +91,22 @@ public class App {
                 }
             }).sync();
             channelFuture.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | SSLException e) {
             log.error("", e);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+            gctsGroup.shutdownGracefully();
         }
+    }
+    
+    private SslContext getSslContext() throws SSLException {
+        File keyCertChainFile = new File(ResourcesUtils.getResourceFile("ssl/server.crt"));
+        File keyFile = new File(ResourcesUtils.getResourceFile("ssl/server_pkcs8.key"));
+        return SslUtils.genServerSslContext(keyCertChainFile, keyFile);
     }
 
     public static void main(String[] args) {
-        new App().run();
+        new App().run(Options.builder().useMonitor(true).monitorIntervals(5).build());
     }
 }

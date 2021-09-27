@@ -4,9 +4,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
-import awesome.socks.common.handler.Monitor;
-import awesome.socks.common.handler.Monitor.Unit;
 import awesome.socks.common.util.Config;
+import awesome.socks.common.util.Monitor;
+import awesome.socks.common.util.Monitor.Unit;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;

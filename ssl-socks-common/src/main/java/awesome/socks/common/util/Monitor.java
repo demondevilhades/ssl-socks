@@ -1,4 +1,4 @@
-package awesome.socks.common.handler;
+package awesome.socks.common.util;
 
 import io.netty.handler.traffic.TrafficCounter;
 import lombok.AllArgsConstructor;
