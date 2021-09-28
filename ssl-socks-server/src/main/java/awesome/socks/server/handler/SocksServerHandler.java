@@ -6,7 +6,6 @@ import awesome.socks.common.bean.HandlerName;
 import awesome.socks.common.util.LogUtils;
 import awesome.socks.common.util.NettyUtils;
 import awesome.socks.server.bean.ServerOptions;
-import awesome.socks.server.socksx.v5.Socks5AuthMethodExt;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -31,9 +30,10 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
 
     public static final SocksServerHandler INSTANCE = new SocksServerHandler();
     
-    private static final String USERNAME = ServerOptions.INSTANCE.serverUsername();
-    private static final String PASSWORD = ServerOptions.INSTANCE.serverPassword();
+    private static final String USERNAME = ServerOptions.getInstance().serverUsername();
+    private static final String PASSWORD = ServerOptions.getInstance().serverPassword();
     private static final boolean AUTH = !Strings.isNullOrEmpty(USERNAME);
+    private static final boolean USE_SSL = ServerOptions.getInstance().useSsl();
 
     private SocksServerHandler() {
     }
@@ -56,7 +56,7 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
                 log.info("class = {}", socksRequest.getClass());
                 if (socksRequest instanceof Socks5InitialRequest) {
                     LogUtils.log(log, (Socks5InitialRequest)socksRequest);
-                    if(ServerOptions.INSTANCE.useSsl()) {
+                    if(USE_SSL) {
                      // TODO
                     }
                     if(AUTH) {

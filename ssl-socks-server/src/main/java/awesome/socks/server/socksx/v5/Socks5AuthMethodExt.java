@@ -8,8 +8,8 @@ import io.netty.handler.codec.socksx.v5.Socks5AuthMethod;
  */
 public class Socks5AuthMethodExt {
 
-    public static final Socks5AuthMethod SSL_NO_AUTH = new Socks5AuthMethod(0x30, "SSL_NO_AUTH");
-    public static final Socks5AuthMethod SSL_PASSWORD = new Socks5AuthMethod(0x32, "SSL_PASSWORD");
+    public static final Socks5AuthMethod SSL_NO_AUTH = new Socks5AuthMethod(0x90, "SSL_NO_AUTH");
+    public static final Socks5AuthMethod SSL_PASSWORD = new Socks5AuthMethod(0x92, "SSL_PASSWORD");
 
     public static Socks5AuthMethod valueOf(byte b) {
         switch (b) {
@@ -19,9 +19,9 @@ public class Socks5AuthMethodExt {
                 return Socks5AuthMethod.GSSAPI;
             case 0x02:
                 return Socks5AuthMethod.PASSWORD;
-            case 0x30:
+            case (byte) 0x90:
                 return SSL_NO_AUTH;
-            case 0x32:
+            case (byte) 0x92:
                 return SSL_PASSWORD;
             case (byte) 0xFF:
                 return Socks5AuthMethod.UNACCEPTED;

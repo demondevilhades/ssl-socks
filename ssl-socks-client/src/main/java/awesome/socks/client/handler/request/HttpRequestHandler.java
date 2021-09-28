@@ -8,12 +8,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
@@ -30,9 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
     private final String url;
-    private final HttpClientCodec httpClientCodec;
-    private final HttpObjectAggregator httpObjectAggregator;
-    private final HttpContentDecompressor httpContentDecompressor;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -54,8 +48,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpResp
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
         log.info("headers = {}", msg.headers());
         log.info("content = {}", msg.content().toString(CharsetUtil.UTF_8));
-        ctx.pipeline().remove(httpClientCodec).remove(httpObjectAggregator).remove(httpContentDecompressor).remove(this);
-        ctx.channel().close();
     }
 
     @Override

@@ -18,18 +18,22 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClientOptions extends Options {
     
-    public static final String SSS_SERVER_HOST = "sss.server.host";
+    protected static final String SSS_SERVER_HOST = "sss.server.host";
     
-    public static final String SSS_LOCAL_PORT = "sss.local.port";
-    public static final String SSS_LOCAL_FINGERPRINTSALGORITHM = "sss.local.fingerprintsAlgorithm";
-    public static final String SSS_LOCAL_TESTURL = "sss.local.testUrl";
+    protected static final String SSS_LOCAL_PORT = "sss.local.port";
+    protected static final String SSS_LOCAL_FINGERPRINTSALGORITHM = "sss.local.fingerprintsAlgorithm";
+    protected static final String SSS_LOCAL_TESTURL = "sss.local.testUrl";
     
-    public static final ClientOptions INSTANCE = new ClientOptions()
+    private static final ClientOptions INSTANCE = new ClientOptions()
             .serverHost(Config.get(SSS_SERVER_HOST))
             .localPort(Config.getInt(SSS_LOCAL_PORT))
             .localFingerprintsAlgorithm(Config.get(SSS_LOCAL_FINGERPRINTSALGORITHM))
             .localTestUrl(Config.get(SSS_LOCAL_TESTURL))
             .optionsConfig();
+    
+    public static ClientOptions getInstance() {
+        return INSTANCE;
+    }
     
     protected String serverHost;
 

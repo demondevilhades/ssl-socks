@@ -50,19 +50,23 @@ public class Client {
     private final Timer timer = new Timer();
 
     public void run() {
-        final GlobalTrafficShapingHandler globalTrafficShapingHandler = (ClientOptions.INSTANCE.monitorIntervals() > 0)
+        ClientOptions clientOptions = ClientOptions.getInstance();
+        
+        final GlobalTrafficShapingHandler globalTrafficShapingHandler = (clientOptions.monitorIntervals() > 0)
                 ? new GlobalTrafficShapingHandler(gtsGroup.next())
                 : null;
         if (globalTrafficShapingHandler != null) {
             Monitor monitor = new Monitor(Unit.KB, globalTrafficShapingHandler.trafficCounter());
-            monitor.run(timer, ClientOptions.INSTANCE.monitorIntervals());
+            monitor.run(timer, clientOptions.monitorIntervals());
         } else {
             gtsGroup.shutdownGracefully();
         }
         log.info("use monitor : {}", (globalTrafficShapingHandler != null));
+        
+        LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
 
         try {
-            final SslContext sslContext = ClientOptions.INSTANCE.useSsl() ? getSslContext() : null;
+            final SslContext sslContext = clientOptions.useSsl() ? getSslContext(clientOptions.localFingerprintsAlgorithm()) : null;
             log.info("use ssl : {}", (sslContext != null));
             
             ServerBootstrap bootstrap = new ServerBootstrap();
@@ -77,12 +81,13 @@ public class Client {
                             if(globalTrafficShapingHandler != null) {
                                 ch.pipeline().addLast("GlobalTrafficShapingHandler", globalTrafficShapingHandler);
                             }
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler);
                             ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
-                            ch.pipeline().addLast("SSSClientHandler", new SSSClientChannelHandler(sslContext));
+                            ch.pipeline().addLast("SSSClientHandler",
+                                    new SSSClientChannelHandler(sslContext, clientOptions.serverHost(), clientOptions.serverPort()));
                         }
                     });
-            ChannelFuture channelFuture = bootstrap.bind(ClientOptions.INSTANCE.localPort())
+            ChannelFuture channelFuture = bootstrap.bind(clientOptions.localPort())
                     .addListener(new GenericFutureListener<ChannelFuture>() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
@@ -104,7 +109,7 @@ public class Client {
         }
     }
     
-    private SslContext getSslContext() throws SSLException {
+    private SslContext getSslContext(String algorithm) throws SSLException {
         String fingerprints = null;
         File file = new File(ResourcesUtils.getResourceFile("ssl/fingerprint"));
         if(file.exists()) {
@@ -116,9 +121,9 @@ public class Client {
                 log.error("", e);
             }
         }
-        return SslUtils.genTrustClientSslContext(ClientOptions.INSTANCE.localFingerprintsAlgorithm(), fingerprints);
+        return SslUtils.genTrustClientSslContext(algorithm, fingerprints);
     }
-
+    
     public static void main(String[] args) {
         new Client().run();
     }

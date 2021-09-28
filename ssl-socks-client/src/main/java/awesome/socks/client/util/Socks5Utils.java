@@ -3,7 +3,7 @@ package awesome.socks.client.util;
 import java.net.InetSocketAddress;
 
 import awesome.socks.client.bean.ClientOptions;
-import awesome.socks.client.handler.request.Socks5InitialRequestHandler;
+import awesome.socks.client.handler.request.Socks5RequestTestHandler;
 import awesome.socks.common.bean.HandlerName;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -13,9 +13,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5ClientEncoder;
-import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,12 +29,19 @@ import lombok.extern.slf4j.Slf4j;
 public final class Socks5Utils {
 
     public void connect() {
+        String testHandlerName = "Socks5RequestTestHandler";
+        
+        ClientOptions clientOptions = ClientOptions.getInstance();
+        
         NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
         Bootstrap bootstrap = new Bootstrap();
+
+        EventExecutorGroup eventExecutorGroup = new DefaultEventExecutorGroup(1);
+        DefaultPromise<Void> promise = new DefaultPromise<>(eventExecutorGroup.next());
         
         try {
             bootstrap.group(eventLoopGroup)
-                    .remoteAddress(new InetSocketAddress("localhost", ClientOptions.INSTANCE.localPort()))
+                    .remoteAddress(new InetSocketAddress("localhost", clientOptions.localPort()))
                     .option(ChannelOption.AUTO_READ, false)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
                     .channel(NioSocketChannel.class)
@@ -40,12 +49,10 @@ public final class Socks5Utils {
 
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-                            Socks5InitialResponseDecoder socks5InitialResponseDecoder = new Socks5InitialResponseDecoder();
                             ch.pipeline()
                                     .addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO))
                                     .addLast("Socks5ClientEncoder", Socks5ClientEncoder.DEFAULT)
-                                    .addLast("Socks5InitialResponseDecoder", socks5InitialResponseDecoder)
-                                    .addLast("Socks5InitialRequestHandler", new Socks5InitialRequestHandler(socks5InitialResponseDecoder));
+                                    .addLast(testHandlerName, new Socks5RequestTestHandler(testHandlerName, clientOptions.localTestUrl(), promise));
                         }
                     });
             ChannelFuture cf = bootstrap.connect().addListener(new GenericFutureListener<ChannelFuture>() {
@@ -60,6 +67,8 @@ public final class Socks5Utils {
                 }
             }).sync();
             cf.channel().closeFuture().sync();
+
+            log.info("promise.isDone = {}, promise.isSuccess = {}, promise.cause = {}", promise.isDone(), promise.isSuccess(), promise.cause());
         } catch (InterruptedException e) {
             log.error("", e);
         } finally {

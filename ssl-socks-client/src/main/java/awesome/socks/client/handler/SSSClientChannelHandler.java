@@ -1,6 +1,5 @@
 package awesome.socks.client.handler;
 
-import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.common.util.NettyUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -12,6 +11,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -19,14 +19,13 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
+@RequiredArgsConstructor
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;
     private final SslContext sslContext;
-
-    public SSSClientChannelHandler(SslContext sslContext) {
-        this.sslContext = sslContext;
-    }
+    private final String serverHost;
+    private final int serverPort;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -46,8 +45,7 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
                         ch.pipeline().addLast("SSSServerChannelHandler", new SSSServerChannelHandler(clientChannel));
                     }
                 });
-        // TODO bug to fix
-        ChannelFuture f = bootstrap.connect(ClientOptions.INSTANCE.serverHost(), ClientOptions.INSTANCE.serverPort())
+        ChannelFuture f = bootstrap.connect(serverHost, serverPort)
                 .addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) {

@@ -17,5 +17,9 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ServerOptions extends Options {
     
-    public static final ServerOptions INSTANCE = new ServerOptions().optionsConfig();
+    private static final ServerOptions INSTANCE = new ServerOptions().optionsConfig();
+    
+    public static ServerOptions getInstance() {
+        return INSTANCE;
+    }
 }

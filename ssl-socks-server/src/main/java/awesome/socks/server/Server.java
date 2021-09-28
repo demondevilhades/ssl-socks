@@ -45,19 +45,21 @@ public class Server {
     private final Timer timer = new Timer();
 
     public void run() {
-        final GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = (ServerOptions.INSTANCE.monitorIntervals() > 0)
+        ServerOptions serverOptions = ServerOptions.getInstance();
+        
+        final GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = (serverOptions.monitorIntervals() > 0)
                 ? new GlobalChannelTrafficShapingHandler(gctsGroup)
                 : null;
         if (globalChannelTrafficShapingHandler != null) {
             Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
-            monitor.run(timer, ServerOptions.INSTANCE.monitorIntervals());
+            monitor.run(timer, serverOptions.monitorIntervals());
         } else {
             gctsGroup.shutdownGracefully();
         }
         log.info("use monitor : {}", (globalChannelTrafficShapingHandler != null));
 
         try {
-            final SslContext sslContext = ServerOptions.INSTANCE.useSsl() ? getSslContext() : null;
+            final SslContext sslContext = serverOptions.useSsl() ? getSslContext() : null;
             log.info("use ssl : {}", (sslContext != null));
             
             ServerBootstrap bootstrap = new ServerBootstrap();
@@ -80,7 +82,7 @@ public class Server {
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
                         }
                     });
-            ChannelFuture channelFuture = bootstrap.bind(ServerOptions.INSTANCE.serverPort())
+            ChannelFuture channelFuture = bootstrap.bind(serverOptions.serverPort())
                     .addListener(new GenericFutureListener<ChannelFuture>() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
