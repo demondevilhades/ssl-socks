@@ -1,4 +1,4 @@
-package awesome.socks.client;
+package awesome.socks.client.handler;
 
 import awesome.socks.common.util.NettyUtils;
 import io.netty.channel.Channel;

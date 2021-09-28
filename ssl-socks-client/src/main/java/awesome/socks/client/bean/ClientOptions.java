@@ -22,15 +22,18 @@ public class ClientOptions extends Options {
     
     public static final String SSS_LOCAL_PORT = "sss.local.port";
     public static final String SSS_LOCAL_FINGERPRINTSALGORITHM = "sss.local.fingerprintsAlgorithm";
+    public static final String SSS_LOCAL_TESTURL = "sss.local.testUrl";
     
     public static final ClientOptions INSTANCE = new ClientOptions()
             .serverHost(Config.get(SSS_SERVER_HOST))
             .localPort(Config.getInt(SSS_LOCAL_PORT))
-            .fingerprintsAlgorithm(Config.get(SSS_LOCAL_FINGERPRINTSALGORITHM))
+            .localFingerprintsAlgorithm(Config.get(SSS_LOCAL_FINGERPRINTSALGORITHM))
+            .localTestUrl(Config.get(SSS_LOCAL_TESTURL))
             .optionsConfig();
     
     protected String serverHost;
 
     protected int localPort;
-    protected String fingerprintsAlgorithm;
+    protected String localFingerprintsAlgorithm;
+    protected String localTestUrl;
 }

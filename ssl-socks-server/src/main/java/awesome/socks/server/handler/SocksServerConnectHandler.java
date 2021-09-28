@@ -1,4 +1,4 @@
-package awesome.socks.server;
+package awesome.socks.server.handler;
 
 import awesome.socks.common.util.NettyUtils;
 import io.netty.bootstrap.Bootstrap;

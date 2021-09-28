@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import awesome.socks.client.bean.ClientOptions;
+import awesome.socks.client.handler.SSSClientChannelHandler;
+import awesome.socks.common.bean.HandlerName;
 import awesome.socks.common.util.Monitor;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
@@ -75,7 +77,7 @@ public class Client {
                             if(globalTrafficShapingHandler != null) {
                                 ch.pipeline().addLast("GlobalTrafficShapingHandler", globalTrafficShapingHandler);
                             }
-                            ch.pipeline().addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO));
                             ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
                             ch.pipeline().addLast("SSSClientHandler", new SSSClientChannelHandler(sslContext));
                         }
@@ -114,7 +116,7 @@ public class Client {
                 log.error("", e);
             }
         }
-        return SslUtils.genTrustClientSslContext(ClientOptions.INSTANCE.fingerprintsAlgorithm(), fingerprints);
+        return SslUtils.genTrustClientSslContext(ClientOptions.INSTANCE.localFingerprintsAlgorithm(), fingerprints);
     }
 
     public static void main(String[] args) {

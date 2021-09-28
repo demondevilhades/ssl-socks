@@ -1,4 +1,4 @@
-package awesome.socks.client;
+package awesome.socks.client.util;
 
 import java.net.InetSocketAddress;
 
@@ -24,18 +24,17 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
-public class SocksClientTest {
+public final class Socks5Utils {
 
-    private String serverHost = ClientOptions.INSTANCE.serverHost();
-    private int serverPort = ClientOptions.INSTANCE.serverPort();
-    
-    public void run() {
-        NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    public void connect() {
+        NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
         Bootstrap bootstrap = new Bootstrap();
+        
         try {
             bootstrap.group(eventLoopGroup)
-                    .remoteAddress(new InetSocketAddress(serverHost, serverPort))
-                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .remoteAddress(new InetSocketAddress("localhost", ClientOptions.INSTANCE.localPort()))
+                    .option(ChannelOption.AUTO_READ, false)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
                     .channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<SocketChannel>() {
 
@@ -46,7 +45,6 @@ public class SocksClientTest {
                                     .addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO))
                                     .addLast("Socks5ClientEncoder", Socks5ClientEncoder.DEFAULT)
                                     .addLast("Socks5InitialResponseDecoder", socks5InitialResponseDecoder)
-                                    
                                     .addLast("Socks5InitialRequestHandler", new Socks5InitialRequestHandler(socks5InitialResponseDecoder));
                         }
                     });
@@ -55,6 +53,7 @@ public class SocksClientTest {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if(future.isSuccess()) {
                         log.info("future is success");
+                        future.channel().read();
                     } else {
                         log.info("future is not success");
                     }
@@ -69,6 +68,6 @@ public class SocksClientTest {
     }
     
     public static void main(String[] args) {
-        new SocksClientTest().run();
+        new Socks5Utils().connect();
     }
 }

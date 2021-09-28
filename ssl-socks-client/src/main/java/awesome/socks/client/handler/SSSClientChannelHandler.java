@@ -1,4 +1,4 @@
-package awesome.socks.client;
+package awesome.socks.client.handler;
 
 import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.common.util.NettyUtils;
@@ -14,6 +14,10 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author awesome
+ */
 @Slf4j
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 
@@ -48,7 +52,8 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (future.isSuccess()) {
-                    log.info("server connect seccess.");
+                    log.info("server connect seccess. bind channel : serverChannel = {}, clientChannel = {}",
+                            future.channel().id().asShortText(), clientChannel.id().asShortText());
                     clientChannel.read();
                 } else {
                     log.error("server connect failed.");
@@ -73,6 +78,12 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
                 }
             });
         }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        // TODO Auto-generated method stub
+        super.channelReadComplete(ctx);
     }
 
     @Override

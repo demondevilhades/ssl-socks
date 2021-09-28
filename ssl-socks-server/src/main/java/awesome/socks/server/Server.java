@@ -6,11 +6,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
+import awesome.socks.common.bean.HandlerName;
 import awesome.socks.common.util.Monitor;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
 import awesome.socks.common.util.SslUtils;
 import awesome.socks.server.bean.ServerOptions;
+import awesome.socks.server.handler.SocksServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -72,7 +74,7 @@ public class Server {
                             if (sslContext != null) {
                                 ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
                             }
-                            ch.pipeline().addLast("LoggingHandler", new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO));
                             ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
                             ch.pipeline().addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
