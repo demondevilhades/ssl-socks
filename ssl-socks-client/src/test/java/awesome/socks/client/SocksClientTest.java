@@ -53,7 +53,8 @@ public class SocksClientTest {
                             ch.pipeline()
                                     .addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO))
                                     .addLast("Socks5ClientEncoder", Socks5ClientEncoder.DEFAULT)
-                                    .addLast(testHandlerName, new Socks5RequestTestHandler(testHandlerName, clientOptions.localTestUrl(), promise));
+                                    .addLast(testHandlerName, new Socks5RequestTestHandler(clientOptions.localTestUrl(),
+                                            promise, clientOptions.serverUsername(), clientOptions.serverPassword()));
                         }
                     });
             ChannelFuture cf = bootstrap.connect().addListener(new GenericFutureListener<ChannelFuture>() {

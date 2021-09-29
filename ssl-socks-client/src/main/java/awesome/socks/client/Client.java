@@ -37,6 +37,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * test : <p>
+ * curl --socks5-hostname localhost:8888 --proxy-user sss_test:03AC674216F3E15C761EE1A5E255F067953623C8B388B4459E13F978D7C846F4 "http://www.baidu.com"
  * 
  * @author awesome
  */

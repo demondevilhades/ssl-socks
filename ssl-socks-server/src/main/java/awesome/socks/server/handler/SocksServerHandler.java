@@ -33,7 +33,7 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
     private static final String USERNAME = ServerOptions.getInstance().serverUsername();
     private static final String PASSWORD = ServerOptions.getInstance().serverPassword();
     private static final boolean AUTH = !Strings.isNullOrEmpty(USERNAME);
-    private static final boolean USE_SSL = ServerOptions.getInstance().useSsl();
+//    private static final boolean USE_SSL = ServerOptions.getInstance().useSsl();
 
     private SocksServerHandler() {
     }
@@ -56,27 +56,20 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
                 log.info("class = {}", socksRequest.getClass());
                 if (socksRequest instanceof Socks5InitialRequest) {
                     LogUtils.log(log, (Socks5InitialRequest)socksRequest);
-                    if(USE_SSL) {
-                     // TODO
-                    }
-                    if(AUTH) {
-//                        ctx.pipeline().addFirst(new Socks5PasswordAuthRequestDecoder());
-                        ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER, "Socks5PasswordAuthRequestDecoder", new Socks5PasswordAuthRequestDecoder());
-//                        ctx.write(new DefaultSocks5AuthMethodResponse(Socks5AuthMethod.PASSWORD));
+                    if (AUTH) {
+                        ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER,
+                                HandlerName.SOCKS5_PASSWORD_AUTH_REQUEST_DECODER, new Socks5PasswordAuthRequestDecoder());
                         ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.PASSWORD));
-//                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_PASSWORD));
                     } else {
-//                        ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
                         ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER, "Socks5CommandRequestDecoder", new Socks5CommandRequestDecoder());
                         ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
-//                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethodExt.SSL_NO_AUTH));
                     }
                 } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
-                    Socks5PasswordAuthRequest authRequest = ((Socks5PasswordAuthRequest) socksRequest);
                     if(AUTH) {
+                        Socks5PasswordAuthRequest authRequest = ((Socks5PasswordAuthRequest) socksRequest);
                         if (USERNAME.equals(authRequest.username()) && PASSWORD.equals(authRequest.password())) {
+                            ctx.pipeline().remove(HandlerName.SOCKS5_PASSWORD_AUTH_REQUEST_DECODER);
                             ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER, "Socks5CommandRequestDecoder", new Socks5CommandRequestDecoder());
-//                            ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
                             ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
                         } else {
                             ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE));
