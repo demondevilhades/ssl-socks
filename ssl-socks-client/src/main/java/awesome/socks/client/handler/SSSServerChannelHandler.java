@@ -1,6 +1,7 @@
 package awesome.socks.client.handler;
 
 import awesome.socks.common.util.NettyUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -21,6 +22,7 @@ public class SSSServerChannelHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
+        ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
         ctx.read();
     }
 
@@ -40,12 +42,14 @@ public class SSSServerChannelHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        NettyUtils.closeOnFlush(clientChannel);
+        if (clientChannel.isActive()) {
+            NettyUtils.closeOnFlush(clientChannel);
+        }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error("", cause);
+        log.error(ctx.name(), cause);
         NettyUtils.closeOnFlush(ctx.channel());
     }
 }

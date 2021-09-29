@@ -79,19 +79,13 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        // TODO Auto-generated method stub
-        super.channelReadComplete(ctx);
-    }
-
-    @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         NettyUtils.closeOnFlush(ctx.channel());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("", cause);
+        log.error(ctx.name(), cause);
         NettyUtils.closeOnFlush(ctx.channel());
     }
 }
