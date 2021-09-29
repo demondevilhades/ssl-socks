@@ -57,6 +57,8 @@ public class Server {
             gctsGroup.shutdownGracefully();
         }
         log.info("use monitor : {}", (globalChannelTrafficShapingHandler != null));
+        
+        LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
 
         try {
             final SslContext sslContext = serverOptions.useSsl() ? getSslContext() : null;
@@ -76,7 +78,7 @@ public class Server {
                             if (sslContext != null) {
                                 ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
                             }
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler);
                             ch.pipeline().addLast("IdleStateHandler", new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
                             ch.pipeline().addLast("SocksPortUnificationServerHandler", new SocksPortUnificationServerHandler())
                                     .addLast("SocksServerHandler", SocksServerHandler.INSTANCE);
