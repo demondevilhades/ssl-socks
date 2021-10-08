@@ -19,13 +19,15 @@ import lombok.experimental.Accessors;
 public class ClientOptions extends Options {
     
     protected static final String SSS_SERVER_HOST = "sss.server.host";
-    
+
+    protected static final String SSS_LOCAL_HOST = "sss.local.host";
     protected static final String SSS_LOCAL_PORT = "sss.local.port";
     protected static final String SSS_LOCAL_FINGERPRINTSALGORITHM = "sss.local.fingerprintsAlgorithm";
     protected static final String SSS_LOCAL_TESTURL = "sss.local.testUrl";
     
     private static final ClientOptions INSTANCE = new ClientOptions()
             .serverHost(Config.get(SSS_SERVER_HOST))
+            .localHost(Config.get(SSS_LOCAL_HOST))
             .localPort(Config.getInt(SSS_LOCAL_PORT))
             .localFingerprintsAlgorithm(Config.get(SSS_LOCAL_FINGERPRINTSALGORITHM))
             .localTestUrl(Config.get(SSS_LOCAL_TESTURL))
@@ -37,6 +39,7 @@ public class ClientOptions extends Options {
     
     protected String serverHost;
 
+    protected String localHost;
     protected int localPort;
     protected String localFingerprintsAlgorithm;
     protected String localTestUrl;

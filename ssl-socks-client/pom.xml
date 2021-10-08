@@ -19,6 +19,8 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 
 		<maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+		
+		<bouncycastle.version>1.69</bouncycastle.version>
 	</properties>
 
 	<dependencies>
@@ -31,6 +33,10 @@
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		    <artifactId>guava</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
 		</dependency>
 
 		<dependency>
@@ -58,6 +64,17 @@
 		<dependency>
 		    <groupId>io.netty</groupId>
 		    <artifactId>netty-tcnative-boringssl-static</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>${bouncycastle.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>${bouncycastle.version}</version>
 		</dependency>
 		
 		<dependency>

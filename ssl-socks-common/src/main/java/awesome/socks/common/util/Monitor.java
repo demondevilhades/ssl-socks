@@ -3,11 +3,9 @@ package awesome.socks.common.util;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import io.netty.handler.traffic.TrafficCounter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
@@ -16,11 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @AllArgsConstructor
-@Slf4j
-public class Monitor {
+public abstract class Monitor<T> {
 
-    private Unit unit;
-    private final TrafficCounter trafficCounter;
+    protected Unit unit;
+    protected T t;
     
     public void run(Timer timer, long delay) {
         if(timer != null) {
@@ -34,11 +31,9 @@ public class Monitor {
         }
     }
 
-    public void log() {
-        log.info("readBytes = {} {}, writtenBytes = {} {}", (trafficCounter.cumulativeReadBytes() / unit.l), unit.s,
-                (trafficCounter.cumulativeWrittenBytes() / unit.l), unit.s);
-    }
+    protected abstract void log();
 
+    @Getter
     @AllArgsConstructor
     public enum Unit {
         B("B", 1), //
@@ -49,5 +44,4 @@ public class Monitor {
         private final String s;
         private final long l;
     }
-
 }

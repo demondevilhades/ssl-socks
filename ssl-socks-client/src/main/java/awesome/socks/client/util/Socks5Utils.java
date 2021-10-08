@@ -19,6 +19,8 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.GenericFutureListener;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,9 +28,10 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Socks5Utils {
-
-    public void connect() {
+    
+    public static DefaultPromise<Void> connectTest() {
         String testHandlerName = "Socks5RequestTestHandler";
         
         ClientOptions clientOptions = ClientOptions.getInstance();
@@ -68,16 +71,12 @@ public final class Socks5Utils {
                 }
             }).sync();
             cf.channel().closeFuture().sync();
-
-            log.info("promise.isDone = {}, promise.isSuccess = {}, promise.cause = {}", promise.isDone(), promise.isSuccess(), promise.cause());
+            return promise;
         } catch (InterruptedException e) {
             log.error("", e);
+            return null;
         } finally {
             eventLoopGroup.shutdownGracefully();
         }        
-    }
-    
-    public static void main(String[] args) {
-        new Socks5Utils().connect();
     }
 }

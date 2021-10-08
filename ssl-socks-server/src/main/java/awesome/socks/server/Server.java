@@ -7,12 +7,13 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import awesome.socks.common.bean.HandlerName;
-import awesome.socks.common.util.Monitor;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
 import awesome.socks.common.util.SslUtils;
 import awesome.socks.server.bean.ServerOptions;
+import awesome.socks.server.handler.HttpServerHandler;
 import awesome.socks.server.handler.SocksServerHandler;
+import awesome.socks.server.util.ServerMonitor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -20,6 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -43,23 +45,30 @@ public class Server {
     private final EventExecutorGroup gctsGroup = new DefaultEventExecutorGroup(1);
 
     private final Timer timer = new Timer();
-
-    public void run() {
+    
+    private ServerMonitor monitor = null;
+    
+    private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
+    
+    public void start() {
         ServerOptions serverOptions = ServerOptions.getInstance();
-        
+        runSSS(serverOptions);
+        runHttp(serverOptions, monitor);
+        log.info("start end");
+    }
+
+    public void runSSS(ServerOptions serverOptions) {
         final GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = (serverOptions.monitorIntervals() > 0)
                 ? new GlobalChannelTrafficShapingHandler(gctsGroup)
                 : null;
         if (globalChannelTrafficShapingHandler != null) {
-            Monitor monitor = new Monitor(Unit.KB, globalChannelTrafficShapingHandler.trafficCounter());
+            monitor = new ServerMonitor(Unit.KB, globalChannelTrafficShapingHandler.channelTrafficCounters());
             monitor.run(timer, serverOptions.monitorIntervals());
         } else {
             gctsGroup.shutdownGracefully();
         }
         log.info("use monitor : {}", (globalChannelTrafficShapingHandler != null));
         
-        LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
-
         try {
             final SslContext sslContext = serverOptions.useSsl() ? getSslContext() : null;
             log.info("use ssl : {}", (sslContext != null));
@@ -95,14 +104,54 @@ public class Server {
                     }
                 }
             }).sync();
-            channelFuture.channel().closeFuture().sync();
+            channelFuture.channel().closeFuture().addListener(new GenericFutureListener<ChannelFuture>() {
+
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    log.info("future is close");
+                }
+            });
         } catch (InterruptedException | SSLException e) {
             log.error("", e);
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-            gctsGroup.shutdownGracefully();
-            timer.cancel();
+        }
+    }
+    
+    private void runHttp(ServerOptions serverOptions, ServerMonitor monitor) {
+        final Server server = this;
+        try {
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            log.info("SocketChannel.id = {}", ch.id());
+
+                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler)
+                                    .addLast("HttpServerCodec", new HttpServerCodec())
+                                    .addLast("HttpServerHandler", new HttpServerHandler(monitor, server));
+                        }
+                    });
+            ChannelFuture channelFuture = bootstrap.bind(serverOptions.httpHost(), serverOptions.httpPort())
+                    .addListener(new GenericFutureListener<ChannelFuture>() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        log.info("future is success");
+                    } else {
+                        log.info("future is not success");
+                    }
+                }
+            }).sync();
+            channelFuture.channel().closeFuture().addListener(new GenericFutureListener<ChannelFuture>() {
+
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    log.info("future is close");
+                }
+            });
+        } catch (InterruptedException e) {
+            log.error("", e);
         }
     }
     
@@ -111,8 +160,15 @@ public class Server {
         File keyFile = new File(ResourcesUtils.getResourceFile("ssl/server_pkcs8.key"));
         return SslUtils.genServerSslContext(keyCertChainFile, keyFile);
     }
+    
+    public void shutdown() {
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+        gctsGroup.shutdownGracefully();
+        timer.cancel();
+    }
 
     public static void main(String[] args) {
-        new Server().run();
+        new Server().start();
     }
 }
