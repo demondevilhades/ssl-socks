@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
-public class ServerMonitor extends Monitor<Collection<TrafficCounter>> {
+public class ServerMonitor extends Monitor<Collection<TrafficCounter>, Map<String, Traffic>> {
 
     public ServerMonitor(Unit unit, Collection<TrafficCounter> t) {
         super(unit, t);

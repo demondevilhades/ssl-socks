@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
-public class ClientMonitor extends Monitor<TrafficCounter> {
+public class ClientMonitor extends Monitor<TrafficCounter, Traffic> {
 
     public ClientMonitor(Unit unit, TrafficCounter t) {
         super(unit, t);

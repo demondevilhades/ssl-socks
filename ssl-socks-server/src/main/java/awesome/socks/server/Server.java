@@ -6,12 +6,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
+import awesome.socks.common.bean.App;
 import awesome.socks.common.bean.HandlerName;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
 import awesome.socks.common.util.SslUtils;
 import awesome.socks.server.bean.ServerOptions;
-import awesome.socks.server.handler.HttpServerHandler;
+import awesome.socks.server.handler.ServerHttpServerHandler;
 import awesome.socks.server.handler.SocksServerHandler;
 import awesome.socks.server.util.ServerMonitor;
 import io.netty.bootstrap.ServerBootstrap;
@@ -38,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
-public class Server {
+public class Server extends App {
 
     private final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private final EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -50,6 +51,7 @@ public class Server {
     
     private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
     
+    @Override
     public void start() {
         ServerOptions serverOptions = ServerOptions.getInstance();
         runSSS(serverOptions);
@@ -57,7 +59,15 @@ public class Server {
         log.info("start end");
     }
 
-    public void runSSS(ServerOptions serverOptions) {
+    @Override
+    public void shutdown() {
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+        gctsGroup.shutdownGracefully();
+        timer.cancel();
+    }
+
+    private void runSSS(ServerOptions serverOptions) {
         final GlobalChannelTrafficShapingHandler globalChannelTrafficShapingHandler = (serverOptions.monitorIntervals() > 0)
                 ? new GlobalChannelTrafficShapingHandler(gctsGroup)
                 : null;
@@ -129,7 +139,7 @@ public class Server {
 
                             ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler)
                                     .addLast("HttpServerCodec", new HttpServerCodec())
-                                    .addLast("HttpServerHandler", new HttpServerHandler(monitor, server));
+                                    .addLast("HttpServerHandler", new ServerHttpServerHandler(server, monitor));
                         }
                     });
             ChannelFuture channelFuture = bootstrap.bind(serverOptions.httpHost(), serverOptions.httpPort())
@@ -159,13 +169,6 @@ public class Server {
         File keyCertChainFile = new File(ResourcesUtils.getResourceFile("ssl/server.crt"));
         File keyFile = new File(ResourcesUtils.getResourceFile("ssl/server_pkcs8.key"));
         return SslUtils.genServerSslContext(keyCertChainFile, keyFile);
-    }
-    
-    public void shutdown() {
-        bossGroup.shutdownGracefully();
-        workerGroup.shutdownGracefully();
-        gctsGroup.shutdownGracefully();
-        timer.cancel();
     }
 
     public static void main(String[] args) {

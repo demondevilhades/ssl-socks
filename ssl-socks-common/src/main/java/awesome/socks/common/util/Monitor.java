@@ -10,11 +10,14 @@ import lombok.Setter;
 /**
  * 
  * @author awesome
+ *
+ * @param <T>
+ * @param <R>
  */
 @Getter
 @Setter
 @AllArgsConstructor
-public abstract class Monitor<T> {
+public abstract class Monitor<T, R> {
 
     protected Unit unit;
     protected T t;
@@ -32,6 +35,8 @@ public abstract class Monitor<T> {
     }
 
     protected abstract void log();
+    
+    public abstract R current();
 
     @Getter
     @AllArgsConstructor

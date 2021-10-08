@@ -1,13 +1,13 @@
-package awesome.socks.server.handler;
+package awesome.socks.common.handler;
 
 import java.io.File;
 import java.io.FileInputStream;
 
 import com.google.gson.Gson;
 
+import awesome.socks.common.bean.App;
+import awesome.socks.common.util.Monitor;
 import awesome.socks.common.util.ResourcesUtils;
-import awesome.socks.server.Server;
-import awesome.socks.server.util.ServerMonitor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,18 +26,23 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 
  * @author awesome
+ *
+ * @param <A>
+ * @param <M>
  */
 @Slf4j
 @AllArgsConstructor
-public class HttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
+public abstract class HttpServerHandler<A extends App, M extends Monitor<?, ?>> extends SimpleChannelInboundHandler<HttpObject> {
 
-    private static byte[] BS = null;
-    private final ServerMonitor monitor;
-    private final Server server;
-    private final Gson gson = new Gson();
+    protected static byte[] BS = null;
     
-    private final String OK = "{\"result\":\"OK\"}";
-    private final String ERROR = "{\"result\":\"ERROR\"}";
+    protected static final String OK = "{\"result\":\"OK\"}";
+    protected static final String ERROR = "{\"result\":\"ERROR\"}";
+
+    protected final Gson gson = new Gson();
+    
+    protected final A app;
+    protected final M monitor;
 
     static {
         File file = new File(ResourcesUtils.getResourceFile("favicon.ico"));
@@ -77,10 +82,10 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
                         content = Unpooled.copiedBuffer(ERROR, CharsetUtil.UTF_8);
                     }
                 } else if("/sss/shutdown".equals(request.uri())){
-                    server.shutdown();
+                    app.shutdown();
                     content = Unpooled.copiedBuffer(OK, CharsetUtil.UTF_8);
                 } else {
-                    content = Unpooled.copiedBuffer(OK, CharsetUtil.UTF_8);
+                    content = service(request);
                 }
                 response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
                 response.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
@@ -93,6 +98,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
             log.info("msg = {}", msg.toString());
         }
     }
+
+    protected abstract ByteBuf service(DefaultHttpRequest request);
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {

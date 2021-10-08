@@ -11,9 +11,10 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import awesome.socks.client.bean.ClientOptions;
-import awesome.socks.client.handler.HttpServerHandler;
+import awesome.socks.client.handler.ClientHttpServerHandler;
 import awesome.socks.client.handler.SSSClientChannelHandler;
 import awesome.socks.client.util.ClientMonitor;
+import awesome.socks.common.bean.App;
 import awesome.socks.common.bean.HandlerName;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
@@ -45,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author awesome
  */
 @Slf4j
-public class Client {
+public class Client extends App {
     
     private final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private final EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -57,11 +58,20 @@ public class Client {
     
     private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
 
+    @Override
     public void start() {
         ClientOptions clientOptions = ClientOptions.getInstance();
         runSSS(clientOptions);
         runHttp(clientOptions, monitor);
         log.info("start end");
+    }
+
+    @Override
+    public void shutdown() {
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+        gtsGroup.shutdownGracefully();
+        timer.cancel();
     }
     
     private void runSSS(ClientOptions clientOptions) {
@@ -135,7 +145,7 @@ public class Client {
 
                             ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler)
                                     .addLast("HttpServerCodec", new HttpServerCodec())
-                                    .addLast("HttpServerHandler", new HttpServerHandler(monitor, client));
+                                    .addLast("HttpServerHandler", new ClientHttpServerHandler(client, monitor));
                         }
                     });
             ChannelFuture channelFuture = bootstrap.bind(clientOptions.httpHost(), clientOptions.httpPort())
@@ -174,13 +184,6 @@ public class Client {
             }
         }
         return SslUtils.genTrustClientSslContext(algorithm, fingerprints);
-    }
-    
-    public void shutdown() {
-        bossGroup.shutdownGracefully();
-        workerGroup.shutdownGracefully();
-        gtsGroup.shutdownGracefully();
-        timer.cancel();
     }
     
     public static void main(String[] args) {
