@@ -2,8 +2,8 @@
 <configuration  scan="true" scanPeriod="10 seconds">
 
     <contextName>log_back</contextName>
-    <property name="log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%logger{36}] [%C{0}.%M:%line] %msg%n" />
-    <property name="crl_log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight([%-5level]) %cyan([%thread] [%logger{36}] [%C{0}.%M:%line]) %msg%n" />
+    <property name="log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%logger{36}] [%C{0}.%M:%line] [%marker] %X - %msg%n" />
+    <property name="crl_log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight([%-5level]) %cyan([%thread] [%logger{36}] [%C{0}.%M:%line] [%marker]) %X - %msg%n" />
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -14,6 +14,10 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+    
+<!--     <logger name="awesome.socks.server.test" level="DEBUG" additivity="true">
+        <appender-ref ref="CONSOLE" />
+    </logger> -->
 
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
