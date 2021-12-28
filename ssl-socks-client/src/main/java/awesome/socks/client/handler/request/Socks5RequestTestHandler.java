@@ -25,13 +25,13 @@ import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthResponseDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
 import io.netty.util.concurrent.DefaultPromise;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
+@XSlf4j
 @RequiredArgsConstructor
 public class Socks5RequestTestHandler extends ChannelInboundHandlerAdapter {
 

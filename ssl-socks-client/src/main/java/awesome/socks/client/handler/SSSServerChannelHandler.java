@@ -8,14 +8,14 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
+@XSlf4j
 @AllArgsConstructor
-@Slf4j
 public class SSSServerChannelHandler extends ChannelInboundHandlerAdapter {
 
     private final Channel clientChannel;

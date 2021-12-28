@@ -12,13 +12,13 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
+@XSlf4j
 @RequiredArgsConstructor
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 

@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.client.handler.request.Socks5RequestTestHandler;
-import awesome.socks.common.bean.HandlerName;
+import awesome.socks.common.metadata.HandlerName;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -21,13 +21,13 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
+@XSlf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Socks5Utils {
     

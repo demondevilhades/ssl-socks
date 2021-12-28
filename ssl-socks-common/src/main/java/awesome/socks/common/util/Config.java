@@ -6,13 +6,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
+@XSlf4j
 public final class Config {
     
     private static final Config CONFIG = new Config();

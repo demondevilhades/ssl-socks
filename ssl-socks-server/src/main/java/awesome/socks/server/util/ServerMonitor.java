@@ -7,14 +7,14 @@ import java.util.Map;
 import awesome.socks.common.bean.Traffic;
 import awesome.socks.common.util.Monitor;
 import io.netty.handler.traffic.TrafficCounter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
-public class ServerMonitor extends Monitor<Collection<TrafficCounter>> {
+@XSlf4j
+public class ServerMonitor extends Monitor<Collection<TrafficCounter>, Map<String, Traffic>> {
 
     public ServerMonitor(Unit unit, Collection<TrafficCounter> t) {
         super(unit, t);

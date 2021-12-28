@@ -2,7 +2,7 @@ package awesome.socks.server.handler;
 
 import com.google.common.base.Strings;
 
-import awesome.socks.common.bean.HandlerName;
+import awesome.socks.common.metadata.HandlerName;
 import awesome.socks.common.util.LogUtils;
 import awesome.socks.common.util.NettyUtils;
 import awesome.socks.server.bean.ServerOptions;
@@ -22,9 +22,9 @@ import io.netty.handler.codec.socksx.v5.Socks5InitialRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequestDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
-@Slf4j
+@XSlf4j
 @ChannelHandler.Sharable
 public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksMessage> {
 

@@ -15,13 +15,13 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 
 /**
  * 
  * @author awesome
  */
-@Slf4j
+@XSlf4j
 @Getter
 @AllArgsConstructor
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpResponse> {

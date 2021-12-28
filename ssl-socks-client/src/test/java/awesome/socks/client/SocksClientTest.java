@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.client.handler.request.Socks5RequestTestHandler;
-import awesome.socks.common.bean.HandlerName;
+import awesome.socks.common.metadata.HandlerName;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
