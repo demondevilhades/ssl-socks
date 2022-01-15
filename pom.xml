@@ -22,7 +22,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 
-		<maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+		<maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
 
 		<lombok.version>1.18.20</lombok.version>
 		<slf.version>1.7.32</slf.version>
@@ -37,6 +37,8 @@
 		<bouncycastle.version>1.69</bouncycastle.version>
 		<tink.version>1.6.1</tink.version>
 		<disruptor.version>3.4.4</disruptor.version>
+		
+		<docker.plugin.version>1.2.2</docker.plugin.version>
 
 		<junit.version>4.13.2</junit.version>
 	</properties>
