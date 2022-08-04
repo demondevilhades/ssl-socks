@@ -15,7 +15,9 @@ import awesome.socks.client.handler.ClientHttpServerHandler;
 import awesome.socks.client.handler.SSSClientChannelHandler;
 import awesome.socks.client.util.ClientMonitor;
 import awesome.socks.common.bean.App;
-import awesome.socks.common.metadata.HandlerName;
+import awesome.socks.common.handler.TrackingHandler;
+import awesome.socks.common.metadata.Handler;
+import awesome.socks.common.metadata.Tracking;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
 import awesome.socks.common.util.SslUtils;
@@ -28,8 +30,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
@@ -56,18 +56,23 @@ public class Client extends App {
     
     private ClientMonitor monitor = null;
     
-    private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
-
     @Override
     public void start() {
-        ClientOptions clientOptions = ClientOptions.getInstance();
-        runSSS(clientOptions);
-        runHttp(clientOptions, monitor);
-        log.info("start end");
+        try {
+            log.info("start...");
+            ClientOptions clientOptions = ClientOptions.getInstance();
+            runSSS(clientOptions);
+            runHttp(clientOptions, monitor);
+            log.info("start finished");
+        } catch (Throwable e) {
+            log.error("", e);
+            shutdown();
+        }
     }
 
     @Override
     public void shutdown() {
+        log.info("shutdown...");
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
         gtsGroup.shutdownGracefully();
@@ -93,20 +98,29 @@ public class Client extends App {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .handler(Handler.BASE_LOGGER.getCh())
                     .childOption(ChannelOption.AUTO_READ, false)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
 
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            if (globalTrafficShapingHandler != null) {
-                                ch.pipeline().addLast("GlobalTrafficShapingHandler", globalTrafficShapingHandler);
-                            }
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler);
+
+                            ch.pipeline().addLast(Handler.TRACKING_INIT_LOGGER.getName(),
+                                    Handler.TRACKING_INIT_LOGGER.getCh());
+
+                            ch.pipeline().addLast(Tracking.STEP_1, new TrackingHandler(Tracking.STEP_1));
+                            ch.pipeline().addLast(Handler.TRACKING_LOGGER.getName() + Tracking.STEP_1,
+                                    Handler.TRACKING_LOGGER.getCh());
+                            ch.pipeline().addLast(Handler.MSG_LOGGER.getName(), Handler.MSG_LOGGER.getCh());
                             ch.pipeline().addLast("IdleStateHandler",
                                     new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
-                            ch.pipeline().addLast("SSSClientHandler", new SSSClientChannelHandler(sslContext,
-                                    clientOptions.serverHost(), clientOptions.serverPort()));
+
+                            ch.pipeline().addLast(Tracking.STEP_2, new TrackingHandler(Tracking.STEP_2));
+                            ch.pipeline().addLast(Handler.TRACKING_LOGGER.getName() + Tracking.STEP_2,
+                                    Handler.TRACKING_LOGGER.getCh());
+                            ch.pipeline().addLast("SSSClientHandler",
+                                    new SSSClientChannelHandler(globalTrafficShapingHandler, sslContext,
+                                            clientOptions.serverHost(), clientOptions.serverPort()));
                         }
                     });
             ChannelFuture channelFuture = bootstrap.bind(clientOptions.localHost(), clientOptions.localPort())
@@ -143,7 +157,7 @@ public class Client extends App {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             log.info("SocketChannel.id = {}", ch.id());
 
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler)
+                            ch.pipeline().addLast(Handler.HTTP_LOGGER.getName(), Handler.HTTP_LOGGER.getCh())
                                     .addLast("HttpServerCodec", new HttpServerCodec())
                                     .addLast("HttpServerHandler", new ClientHttpServerHandler(client, monitor));
                         }

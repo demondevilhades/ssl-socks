@@ -4,6 +4,7 @@
     <contextName>log_back</contextName>
     <property name="log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%logger{36}] [%C{0}.%M:%line] [%marker] %X - %msg%n" />
     <property name="crl_log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight([%-5level]) %cyan([%thread] [%logger{36}] [%C{0}.%M:%line] [%marker]) %X - %msg%n" />
+    <property name="log_path" value="./log" />
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -15,9 +16,75 @@
         </encoder>
     </appender>
     
-<!--     <logger name="awesome.socks.server.test" level="DEBUG" additivity="true">
-        <appender-ref ref="CONSOLE" />
-    </logger> -->
+    <appender name="TS_LOGGER_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${log_path}/log_ts.log</File>
+        <append>true</append>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log_path}/bak/log_ts_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+        </rollingPolicy>
+        <encoder charset="UTF-8">
+            <pattern>${log_pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="MSG_LOGGER_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${log_path}/log_msg.log</File>
+        <append>true</append>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log_path}/bak/log_msg_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+        </rollingPolicy>
+        <encoder charset="UTF-8">
+            <pattern>${log_pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="HTTP_LOGGER_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${log_path}/log_http.log</File>
+        <append>true</append>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log_path}/bak/log_http_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+        </rollingPolicy>
+        <encoder charset="UTF-8">
+            <pattern>${log_pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    
+    <logger name="TS_LOGGER" additivity="false" level="INFO">
+        <appender-ref ref="TS_LOGGER_APPENDER"/>
+    </logger>
+    
+    <logger name="MSG_LOGGER" additivity="false" level="INFO">
+        <appender-ref ref="MSG_LOGGER_APPENDER"/>
+    </logger>
+    
+    <logger name="HTTP_LOGGER" additivity="false" level="INFO">
+        <appender-ref ref="HTTP_LOGGER_APPENDER"/>
+    </logger>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE" />

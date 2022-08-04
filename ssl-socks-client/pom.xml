@@ -87,12 +87,6 @@
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-				<excludes>
-					<exclude>*.properties</exclude>
-					<exclude>*.xml</exclude>
-					<exclude>ssl/</exclude>
-				</excludes>
 			</resource>
 		</resources>
 		<plugins>
@@ -108,6 +102,11 @@
 							<mainClass>awesome.socks.client.Client</mainClass>
 						</manifest>
 					</archive>
+					<excludes>
+						<exclude>*.properties</exclude>
+						<exclude>*.xml</exclude>
+						<exclude>ssl/</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 			<plugin>

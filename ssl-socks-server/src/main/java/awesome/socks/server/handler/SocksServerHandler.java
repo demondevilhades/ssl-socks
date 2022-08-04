@@ -2,6 +2,7 @@ package awesome.socks.server.handler;
 
 import com.google.common.base.Strings;
 
+import awesome.socks.common.metadata.Handler;
 import awesome.socks.common.metadata.HandlerName;
 import awesome.socks.common.util.LogUtils;
 import awesome.socks.common.util.NettyUtils;
@@ -22,10 +23,13 @@ import io.netty.handler.codec.socksx.v5.Socks5InitialRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequestDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.XSlf4j;
 
 @XSlf4j
 @ChannelHandler.Sharable
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksMessage> {
 
     public static final SocksServerHandler INSTANCE = new SocksServerHandler();
@@ -35,9 +39,6 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
     private static final boolean AUTH = !Strings.isNullOrEmpty(USERNAME);
 //    private static final boolean USE_SSL = ServerOptions.getInstance().useSsl();
 
-    private SocksServerHandler() {
-    }
-
     @Override
     public void channelRead0(ChannelHandlerContext ctx, SocksMessage socksRequest) throws Exception {
         log.info("socksRequest.version = {}", socksRequest.version());
@@ -45,7 +46,7 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
             case SOCKS4a:
                 Socks4CommandRequest socksV4CmdRequest = (Socks4CommandRequest) socksRequest;
                 if (socksV4CmdRequest.type() == Socks4CommandType.CONNECT) {
-                    ctx.pipeline().addLast(new SocksServerConnectHandler());
+                    ctx.pipeline().addLast(HandlerName.SERVER_SOCKS_SERVER_CONNECT, SocksServerConnectHandler.INSTANCE);
                     ctx.pipeline().remove(this);
                     ctx.fireChannelRead(socksRequest);
                 } else {
@@ -57,19 +58,22 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
                 if (socksRequest instanceof Socks5InitialRequest) {
                     LogUtils.log(log, (Socks5InitialRequest)socksRequest);
                     if (AUTH) {
-                        ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER,
-                                HandlerName.SOCKS5_PASSWORD_AUTH_REQUEST_DECODER, new Socks5PasswordAuthRequestDecoder());
+                        ctx.pipeline().addBefore(Handler.MSG_LOGGER.getName(),
+                                HandlerName.SERVER_SOCKS5_PASSWORD_AUTH_REQUEST_DECODER, new Socks5PasswordAuthRequestDecoder());
                         ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.PASSWORD));
                     } else {
-                        ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER, "Socks5CommandRequestDecoder", new Socks5CommandRequestDecoder());
+                        ctx.pipeline().addBefore(Handler.MSG_LOGGER.getName(),
+                                HandlerName.SERVER_SOCKS5_COMMAND_REQUEST_DECODER, new Socks5CommandRequestDecoder());
                         ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
                     }
                 } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
                     if(AUTH) {
                         Socks5PasswordAuthRequest authRequest = ((Socks5PasswordAuthRequest) socksRequest);
                         if (USERNAME.equals(authRequest.username()) && PASSWORD.equals(authRequest.password())) {
-                            ctx.pipeline().remove(HandlerName.SOCKS5_PASSWORD_AUTH_REQUEST_DECODER);
-                            ctx.pipeline().addBefore(HandlerName.LOGGING_HANDLER, "Socks5CommandRequestDecoder", new Socks5CommandRequestDecoder());
+                            ctx.pipeline().remove(HandlerName.SERVER_SOCKS5_PASSWORD_AUTH_REQUEST_DECODER);
+                            ctx.pipeline().addBefore(Handler.MSG_LOGGER.getName(),
+                                    HandlerName.SERVER_SOCKS5_COMMAND_REQUEST_DECODER,
+                                    new Socks5CommandRequestDecoder());
                             ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
                         } else {
                             ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE));
@@ -79,7 +83,7 @@ public final class SocksServerHandler extends SimpleChannelInboundHandler<SocksM
                     Socks5CommandRequest socks5CmdRequest = (Socks5CommandRequest) socksRequest;
                     LogUtils.log(log, socks5CmdRequest);
                     if (socks5CmdRequest.type() == Socks5CommandType.CONNECT) {
-                        ctx.pipeline().addLast(new SocksServerConnectHandler());
+                        ctx.pipeline().addLast(HandlerName.SERVER_SOCKS_SERVER_CONNECT, SocksServerConnectHandler.INSTANCE);
                         ctx.pipeline().remove(this);
                         ctx.fireChannelRead(socksRequest);
                     } else {

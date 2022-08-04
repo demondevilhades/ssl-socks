@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import com.google.gson.Gson;
 
 import awesome.socks.common.bean.App;
+import awesome.socks.common.metadata.HandlerName;
 import awesome.socks.common.util.Monitor;
 import awesome.socks.common.util.ResourcesUtils;
 import io.netty.buffer.ByteBuf;
@@ -30,14 +31,16 @@ import lombok.extern.slf4j.Slf4j;
  * @param <A>
  * @param <M>
  */
-@Slf4j
+@Slf4j(topic = HandlerName.HTTP_LOGGER)
 @AllArgsConstructor
 public abstract class HttpServerHandler<A extends App, M extends Monitor<?, ?>> extends SimpleChannelInboundHandler<HttpObject> {
 
     protected static byte[] BS = null;
     
     protected static final String OK = "{\"result\":\"OK\"}";
+    protected static final String OK_TIME = "{\"result\":\"OK\", \"time\":%d}";
     protected static final String ERROR = "{\"result\":\"ERROR\"}";
+    protected static final String ERROR_TIME = "{\"result\":\"ERROR\", \"time\":%d}";
 
     protected final Gson gson = new Gson();
     

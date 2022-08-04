@@ -1,6 +1,7 @@
 package awesome.socks.client.handler.request;
 
 import awesome.socks.client.exception.TestErrorException;
+import awesome.socks.common.metadata.HandlerName;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -31,7 +32,7 @@ import lombok.extern.slf4j.XSlf4j;
  * 
  * @author awesome
  */
-@XSlf4j
+@XSlf4j(topic = HandlerName.TEST_LOGGER)
 @RequiredArgsConstructor
 public class Socks5RequestTestHandler extends ChannelInboundHandlerAdapter {
 

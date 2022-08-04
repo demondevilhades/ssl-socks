@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 
 import awesome.socks.client.bean.ClientOptions;
 import awesome.socks.client.handler.request.Socks5RequestTestHandler;
+import awesome.socks.common.metadata.Handler;
 import awesome.socks.common.metadata.HandlerName;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -13,8 +14,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5ClientEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutorGroup;
@@ -31,8 +30,6 @@ public class SocksClientTest {
     public void run() {
         ClientOptions clientOptions = ClientOptions.getInstance();
         
-        String testHandlerName = "Socks5RequestTestHandler";
-
         String serverHost = clientOptions.serverHost();
         int serverPort = clientOptions.serverPort();
         
@@ -51,10 +48,11 @@ public class SocksClientTest {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
-                                    .addLast(HandlerName.LOGGING_HANDLER, new LoggingHandler(LogLevel.INFO))
-                                    .addLast("Socks5ClientEncoder", Socks5ClientEncoder.DEFAULT)
-                                    .addLast(testHandlerName, new Socks5RequestTestHandler(clientOptions.localTestUrl(),
-                                            promise, clientOptions.serverUsername(), clientOptions.serverPassword()));
+                                    .addLast(Handler.TEST_LOGGER.getName(), Handler.TEST_LOGGER.getCh())
+                                    .addLast(HandlerName.CLIENT_SOCKS5_ENCODER, Socks5ClientEncoder.DEFAULT)
+                                    .addLast(HandlerName.CLIENT_TEST,
+                                            new Socks5RequestTestHandler(clientOptions.localTestUrl(), promise,
+                                                    clientOptions.serverUsername(), clientOptions.serverPassword()));
                         }
                     });
             ChannelFuture cf = bootstrap.connect().addListener(new GenericFutureListener<ChannelFuture>() {

@@ -1,5 +1,9 @@
 package awesome.socks.client.handler;
 
+import awesome.socks.common.handler.TrackingHandler;
+import awesome.socks.common.metadata.Handler;
+import awesome.socks.common.metadata.HandlerName;
+import awesome.socks.common.metadata.Tracking;
 import awesome.socks.common.util.NettyUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -11,6 +15,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.XSlf4j;
 
@@ -23,6 +28,7 @@ import lombok.extern.slf4j.XSlf4j;
 public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     private Channel serverChannel;
+    private final GlobalTrafficShapingHandler globalTrafficShapingHandler;
     private final SslContext sslContext;
     private final String serverHost;
     private final int serverPort;
@@ -34,15 +40,27 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
         bootstrap.group(clientChannel.eventLoop())
                 .option(ChannelOption.AUTO_READ, false)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
-                .channel(ctx.channel().getClass())
+                .channel(clientChannel.getClass())
                 .handler(new ChannelInitializer<SocketChannel>() {
 
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
-                        if (sslContext != null) {
-                            ch.pipeline().addLast("SslHandler", sslContext.newHandler(ch.alloc()));
+                        if (globalTrafficShapingHandler != null) {
+                            ch.pipeline().addLast(HandlerName.CLIENT_TS, globalTrafficShapingHandler);
                         }
-                        ch.pipeline().addLast("SSSServerChannelHandler", new SSSServerChannelHandler(clientChannel));
+
+                        ch.pipeline().addLast(Tracking.STEP_3, new TrackingHandler(Tracking.STEP_3));
+                        ch.pipeline().addLast(Handler.TRACKING_LOGGER.getName() + Tracking.STEP_3,
+                                Handler.TRACKING_LOGGER.getCh());
+                        ch.pipeline().addLast(Handler.TS_LOGGER.getName(), Handler.TS_LOGGER.getCh());
+                        if (sslContext != null) {
+                            ch.pipeline().addLast(HandlerName.SSL, sslContext.newHandler(ch.alloc()));
+                        }
+
+                        ch.pipeline().addLast(Tracking.STEP_4, new TrackingHandler(Tracking.STEP_4));
+                        ch.pipeline().addLast(Handler.TRACKING_LOGGER.getName() + Tracking.STEP_4,
+                                Handler.TRACKING_LOGGER.getCh());
+                        ch.pipeline().addLast(HandlerName.CLIENT_SSS_SERVER, new SSSServerChannelHandler(clientChannel));
                     }
                 });
         ChannelFuture f = bootstrap.connect(serverHost, serverPort)
@@ -50,7 +68,7 @@ public class SSSClientChannelHandler extends ChannelInboundHandlerAdapter {
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (future.isSuccess()) {
-                    log.info("server connect seccess. bind channel : serverChannel = {}, clientChannel = {}",
+                    log.info("server connect success. bind channel : serverChannel = {}, clientChannel = {}",
                             future.channel().id().asShortText(), clientChannel.id().asShortText());
                     clientChannel.read();
                 } else {

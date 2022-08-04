@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import awesome.socks.common.bean.App;
-import awesome.socks.common.metadata.HandlerName;
+import awesome.socks.common.metadata.Handler;
 import awesome.socks.common.util.Monitor.Unit;
 import awesome.socks.common.util.ResourcesUtils;
 import awesome.socks.common.util.SslUtils;
@@ -25,8 +25,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
@@ -50,18 +48,23 @@ public class Server extends App {
     
     private ServerMonitor monitor = null;
     
-    private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
-    
     @Override
     public void start() {
-        ServerOptions serverOptions = ServerOptions.getInstance();
-        runSSS(serverOptions);
-        runHttp(serverOptions, monitor);
-        log.info("start end");
+        try {
+            log.info("start...");
+            ServerOptions serverOptions = ServerOptions.getInstance();
+            runSSS(serverOptions);
+            runHttp(serverOptions, monitor);
+            log.info("start finished");
+        } catch (Throwable e) {
+            log.error("", e);
+            shutdown();
+        }
     }
 
     @Override
     public void shutdown() {
+        log.info("shutdown...");
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
         gctsGroup.shutdownGracefully();
@@ -87,7 +90,7 @@ public class Server extends App {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .handler(Handler.BASE_LOGGER.getCh())
                     .childHandler(new ChannelInitializer<SocketChannel>() {
 
                         @Override
@@ -100,7 +103,7 @@ public class Server extends App {
                             if (sslContext != null) {
                                 ch.pipeline().addLast(ServerHandlerName.SSL_HANDLER, sslContext.newHandler(ch.alloc()));
                             }
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler);
+                            ch.pipeline().addLast(Handler.MSG_LOGGER.getName(), Handler.MSG_LOGGER.getCh());
                             ch.pipeline().addLast(ServerHandlerName.IDLE_STATE_HANDLER, new IdleStateHandler(30, 30, 0, TimeUnit.SECONDS));
                             ch.pipeline().addLast(ServerHandlerName.SOCKS_PORT_UNIFICATION_SERVER_HANDLER, new SocksPortUnificationServerHandler())
                                     .addLast(ServerHandlerName.SOCKS_SERVER_HANDLER, SocksServerHandler.INSTANCE);
@@ -140,7 +143,7 @@ public class Server extends App {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             log.info("SocketChannel.id = {}", ch.id());
 
-                            ch.pipeline().addLast(HandlerName.LOGGING_HANDLER, loggingHandler)
+                            ch.pipeline().addLast(Handler.HTTP_LOGGER.getName(), Handler.HTTP_LOGGER.getCh())
                                     .addLast("HttpServerCodec", new HttpServerCodec())
                                     .addLast("HttpServerHandler", new ServerHttpServerHandler(server, monitor));
                         }
